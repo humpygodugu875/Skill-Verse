@@ -21,7 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   accessToken: null,
   session: null,
-  isLoading: false,
+  isLoading: true,
   setSession: (sessionOrUser, token) => {
     if (sessionOrUser && 'access_token' in sessionOrUser) {
       const session = sessionOrUser as Session;
