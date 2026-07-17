@@ -12,19 +12,21 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
   const [isRendered, setIsRendered] = useState(false);
 
   useEffect(() => {
-    // Session Auth Gate check
-    if (!isAuthenticated) {
-      router.push(ROUTES.LOGIN);
-    } else {
-      setIsRendered(true);
+    // Session Auth Gate check - only run when hydration check finishes
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push(ROUTES.LOGIN);
+      } else {
+        setIsRendered(true);
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!isRendered) {
+  if (isLoading || !isRendered) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background text-text-secondary select-none">
         <div className="flex flex-col items-center gap-3">
