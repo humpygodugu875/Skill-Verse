@@ -1,12 +1,17 @@
 import { create } from 'zustand';
 import { User, Roadmap, Task, Agent } from '../types';
+import { Session } from '@supabase/supabase-js';
 
 // 1. Session & Authentication Store Shell
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   token: string | null;
-  setSession: (user: User | null, token: string | null) => void;
+  accessToken: string | null;
+  session: Session | null;
+  isLoading: boolean;
+  setSession: (sessionOrUser: any, token?: string | null) => void;
+  setLoading: (isLoading: boolean) => void;
   clearSession: () => void;
 }
 
@@ -14,8 +19,65 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   token: null,
-  setSession: (user, token) => set({ user, token, isAuthenticated: !!user }),
-  clearSession: () => set({ user: null, token: null, isAuthenticated: false }),
+  accessToken: null,
+  session: null,
+  isLoading: false,
+  setSession: (sessionOrUser, token) => {
+    if (sessionOrUser && 'access_token' in sessionOrUser) {
+      const session = sessionOrUser as Session;
+      const user = session.user
+        ? {
+            id: session.user.id,
+            email: session.user.email || '',
+            created_at: session.user.created_at,
+          }
+        : null;
+      set({
+        session,
+        user,
+        token: session.access_token,
+        accessToken: session.access_token,
+        isAuthenticated: !!user,
+        isLoading: false,
+      });
+    } else {
+      const user = sessionOrUser as User | null;
+      const activeToken = token || null;
+      set({
+        user,
+        token: activeToken,
+        accessToken: activeToken,
+        session: user
+          ? ({
+              access_token: activeToken || '',
+              token_type: 'bearer',
+              expires_in: 3600,
+              refresh_token: '',
+              user: {
+                id: user.id,
+                email: user.email,
+                created_at: user.created_at || '',
+                aud: 'authenticated',
+                app_metadata: {},
+                user_metadata: {},
+              } as any,
+            } as Session)
+          : null,
+        isAuthenticated: !!user,
+        isLoading: false,
+      });
+    }
+  },
+  setLoading: (isLoading) => set({ isLoading }),
+  clearSession: () =>
+    set({
+      user: null,
+      token: null,
+      accessToken: null,
+      session: null,
+      isAuthenticated: false,
+      isLoading: false,
+    }),
 }));
 
 // 2. Active Learning Goal & Pipelines Store Shell
