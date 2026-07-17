@@ -13,17 +13,35 @@ export const requireAuth = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
-    if (!token) {
+    if (!authHeader) {
       throw new AppError(
-        'Authentication credentials are required to access this resource.',
+        'Authorization header is missing.',
         401,
         ErrorCode.UNAUTHORIZED
       );
     }
 
-    logger.debug('[AuthMiddleware] Extracted access token. JWT signature validation pending.');
+    if (!authHeader.startsWith('Bearer ')) {
+      throw new AppError(
+        'Authorization header must follow the Bearer <token> format.',
+        401,
+        ErrorCode.UNAUTHORIZED
+      );
+    }
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || !parts[1]) {
+      throw new AppError(
+        'Authorization token is missing or malformed.',
+        401,
+        ErrorCode.UNAUTHORIZED
+      );
+    }
+
+    const token = parts[1];
+
+    logger.debug(`[AuthMiddleware] Extracted access token: ${token.substring(0, 10)}... JWT signature validation pending.`);
 
     // TODO: Verify JWT token & assign user payload to request context
     
