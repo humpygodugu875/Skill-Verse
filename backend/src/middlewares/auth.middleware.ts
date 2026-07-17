@@ -3,9 +3,23 @@ import { supabase } from '../lib/supabase';
 import { AppError, ErrorCode } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+// Type extension mapping user parameters to Express request scope
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email?: string;
+        role?: string;
+        metadata: any;
+      };
+    }
+  }
+}
+
 /**
  * Middleware to require authentication on protected routes.
- * Extract access tokens from headers, and prepares session validations.
+ * Extract access tokens from headers, validates JWTs via Supabase, and configures user context.
  */
 export const requireAuth = async (
   req: Request,
@@ -54,7 +68,15 @@ export const requireAuth = async (
       );
     }
 
-    logger.debug(`[AuthMiddleware] User token verified successfully for user: ${user.id}`);
+    // Attach authenticated user information to request object wrapper
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      metadata: user.user_metadata,
+    };
+
+    logger.debug(`[AuthMiddleware] User token verified successfully for: ${user.id}`);
     
     next();
   } catch (error) {

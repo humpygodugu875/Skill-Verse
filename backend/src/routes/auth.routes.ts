@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { validateRequest } from '../middlewares/validation.middleware';
+import { requireAuth } from '../middlewares/auth.middleware';
 import {
   signupValidator,
   loginValidator,
@@ -34,6 +35,7 @@ router.post(
 // GET /api/auth/me - Retrieves current authenticated user context
 router.get(
   '/me',
+  requireAuth,
   AuthController.getCurrentUser
 );
 
