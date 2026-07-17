@@ -9,11 +9,13 @@ import { ROUTES } from '../../constants/navigation';
 import Button from '../../components/ui/button';
 import Input from '../../components/ui/input';
 import Card from '../../components/ui/card';
+import { supabase } from '../../lib/supabase';
 
 export default function SignupPage() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
 
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,7 +26,7 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
 
-    if (!email || !password || !confirmPassword) {
+    if (!fullName || !email || !password || !confirmPassword) {
       setError('Please fill in all parameter fields.');
       return;
     }
@@ -34,19 +36,60 @@ export default function SignupPage() {
       return;
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      setTimeout(() => {
-        setSession(
-          { id: 'usr_arjun', email },
-          'mocked-jwt-token-string'
-        );
-        setIsLoading(false);
-        router.push(ROUTES.ONBOARDING);
-      }, 1000);
+      // 1. Submit signup request to Supabase Authentication engine
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            fullName,
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      if (!data.user) {
+        throw new Error('Registration succeeded, but no user description parameters were returned.');
+      }
+
+      // 2. Set authenticated context inside Zustand local session store
+      setSession(
+        {
+          id: data.user.id,
+          email: data.user.email || email,
+          created_at: data.user.created_at,
+        },
+        data.session?.access_token || null
+      );
+
+      // 3. Navigate successfully to dashboard onboarding workflow
+      router.push(ROUTES.ONBOARDING);
     } catch (err: any) {
-      setError(err.message || 'Registration failed. Please try again.');
+      // 4. Translate raw Supabase backend errors into readable client warning messages
+      let friendlyMessage = err.message || 'Registration failed. Please try again.';
+      
+      const errorStr = (err.message || '').toLowerCase();
+      if (errorStr.includes('user already registered') || err.status === 422) {
+        friendlyMessage = 'An account with this email address already exists.';
+      } else if (errorStr.includes('weak password') || errorStr.includes('password should be')) {
+        friendlyMessage = 'Weak password. The password must be at least 6 characters.';
+      } else if (err.toString().toLowerCase().includes('fetch') || errorStr.includes('network')) {
+        friendlyMessage = 'A network error occurred. Please check your connection status.';
+      }
+      
+      setError(friendlyMessage);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -84,6 +127,15 @@ export default function SignupPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            id="fullName"
+            type="text"
+            label="Full Name"
+            placeholder="John Doe"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            disabled={isLoading}
+          />
           <Input
             id="email"
             type="email"
