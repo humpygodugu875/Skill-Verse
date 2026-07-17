@@ -30,6 +30,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     restoreSession();
+
+    // Subscribe to authentication state updates
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'USER_UPDATED'
+      ) {
+        if (session) {
+          setSession(session);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        clearSession();
+      }
+    });
+
+    // Clean up subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [setSession, clearSession, setLoading]);
 
   return (
