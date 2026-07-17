@@ -36,10 +36,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (
         event === 'SIGNED_IN' ||
         event === 'TOKEN_REFRESHED' ||
-        event === 'USER_UPDATED'
+        event === 'USER_UPDATED' ||
+        event === 'INITIAL_SESSION'
       ) {
         if (session) {
           setSession(session);
+        } else {
+          clearSession();
         }
       } else if (event === 'SIGNED_OUT') {
         clearSession();

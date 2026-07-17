@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpen, Award, Hammer, GraduationCap, ArrowRight } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
@@ -8,21 +8,51 @@ import Badge from '../../../components/ui/badge';
 import Timeline from '../../../components/ui/timeline';
 import Button from '../../../components/ui/button';
 import { useWorkspaceStore } from '../../../store';
-import { MOCK_ROADMAP } from '../../../constants/mockData';
 import { ROUTES } from '../../../constants/navigation';
+import { api } from '../../../services/api';
 
 export default function RoadmapPage() {
   const router = useRouter();
   
-  // Use store roadmap, falling back to mock initial parameters
-  const activeRoadmap = useWorkspaceStore((state) => state.activeRoadmap) || MOCK_ROADMAP;
-  const milestones = activeRoadmap.milestones || [];
-  
-  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>(
-    milestones.find(m => m.status === 'in_progress')?.id || milestones[0]?.id || ''
-  );
+  const { activeRoadmap, setActiveRoadmap, setTasksList } = useWorkspaceStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>('');
 
-  const selectedMilestone = milestones.find((m) => m.id === selectedMilestoneId);
+  useEffect(() => {
+    const loadRoadmap = async () => {
+      if (!activeRoadmap) {
+        try {
+          setIsLoading(true);
+          const res = await api.roadmaps.getActive();
+          if (res.data) {
+            setActiveRoadmap(res.data);
+            const sampleTasks: any[] = [];
+            res.data.milestones.forEach((m: any) => {
+              if (m.tasks) sampleTasks.push(...m.tasks);
+            });
+            setTasksList(sampleTasks);
+          }
+        } catch (err) {
+          console.error('Failed to load active roadmap', err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    loadRoadmap();
+  }, [activeRoadmap, setActiveRoadmap, setTasksList]);
+
+  const milestones = activeRoadmap?.milestones || [];
+
+  useEffect(() => {
+    if (milestones.length > 0 && !selectedMilestoneId) {
+      setSelectedMilestoneId(
+        milestones.find((m: any) => m.status === 'in_progress')?.id || milestones[0]?.id || ''
+      );
+    }
+  }, [milestones, selectedMilestoneId]);
+
+  const selectedMilestone = milestones.find((m: any) => m.id === selectedMilestoneId);
 
   return (
     <div className="space-y-6">

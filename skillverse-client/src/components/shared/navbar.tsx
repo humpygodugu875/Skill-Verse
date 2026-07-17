@@ -7,6 +7,7 @@ import { Sparkles, LogIn, Compass } from 'lucide-react';
 import { ROUTES } from '../../constants/navigation';
 import { useAuthStore } from '../../store';
 import Button from '../ui/button';
+import { supabase } from '../../lib/supabase';
 
 export default function Navbar() {
   const router = useRouter();
@@ -37,7 +38,12 @@ export default function Navbar() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signOut();
+                  } catch (err) {
+                    console.error('Logout error:', err);
+                  }
                   clearSession();
                   router.push(ROUTES.HOME);
                 }}

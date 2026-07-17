@@ -9,6 +9,9 @@ import { AppError } from './utils/errors';
 import { sendSuccess } from './utils/responses';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import authRouter from './routes/auth.routes';
+import goalsRouter from './routes/goals.routes';
+import roadmapsRouter from './routes/roadmaps.routes';
+import progressRouter from './routes/progress.routes';
 
 const app = express();
 
@@ -48,6 +51,10 @@ app.use(
 
 // 5. API Routes
 app.use('/api/auth', authRouter);
+app.use('/api/goals', goalsRouter);
+app.use('/api/roadmaps', roadmapsRouter);
+app.use('/api/progress', progressRouter);
+
 
 // 6. System Health Check Route
 app.get('/health', (_req, res) => {

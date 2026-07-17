@@ -1,7 +1,14 @@
 import axios from 'axios';
 import { useAuthStore } from '../store';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+if (API_BASE_URL.endsWith('/')) {
+  API_BASE_URL = API_BASE_URL.slice(0, -1);
+}
+if (!API_BASE_URL.endsWith('/api') && !API_BASE_URL.endsWith('/api/v1')) {
+  API_BASE_URL = `${API_BASE_URL}/api`;
+}
+
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

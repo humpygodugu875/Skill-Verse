@@ -21,6 +21,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,20 +64,26 @@ export default function SignupPage() {
         throw new Error('Registration succeeded, but no user description parameters were returned.');
       }
 
-      // 2. Set authenticated context inside Zustand local session store
+      // 2. If email confirmation is enabled, wait for confirmation and show instructions
+      if (!data.session) {
+        setIsSuccess(true);
+        return;
+      }
+
+      // 3. Set authenticated context inside Zustand local session store
       setSession(
         {
           id: data.user.id,
           email: data.user.email || email,
           created_at: data.user.created_at,
         },
-        data.session?.access_token || null
+        data.session.access_token
       );
 
-      // 3. Navigate successfully to dashboard onboarding workflow
+      // 4. Navigate successfully to dashboard onboarding workflow
       router.push(ROUTES.ONBOARDING);
     } catch (err: any) {
-      // 4. Translate raw Supabase backend errors into readable client warning messages
+      // 5. Translate raw Supabase backend errors into readable client warning messages
       let friendlyMessage = err.message || 'Registration failed. Please try again.';
       
       const errorStr = (err.message || '').toLowerCase();
@@ -93,6 +100,46 @@ export default function SignupPage() {
       setIsLoading(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4 relative">
+        {/* Ambient Light */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
+
+        {/* Brand Header */}
+        <Link href={ROUTES.HOME} className="flex items-center gap-2 mb-8 cursor-pointer select-none">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg brand-gradient text-white shadow-glow">
+            <Sparkles className="h-4.5 w-4.5" />
+          </div>
+          <span className="font-display font-bold text-lg text-text-primary tracking-wide">
+            Skill<span className="text-brand-secondary">Verse</span>
+          </span>
+        </Link>
+
+        <Card hoverable={false} className="w-full max-w-md p-8 border border-white/5 bg-[#070712]/80 backdrop-blur-md text-center">
+          <div className="h-12 w-12 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center mx-auto mb-4 text-brand-secondary shadow-glow animate-pulse">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <h2 className="font-display font-bold text-xl text-text-primary mb-2">
+            Confirm your Email
+          </h2>
+          <p className="text-xs text-text-secondary leading-relaxed max-w-xs mx-auto mb-6">
+            We have sent a verification link to <span className="text-text-primary font-semibold">{email}</span>. Click the link inside the email to verify and activate your account.
+          </p>
+          <div className="pt-6 border-t border-white/5">
+            <Button
+              variant="primary"
+              onClick={() => router.push(ROUTES.LOGIN)}
+              className="w-full font-bold"
+            >
+              Return to Log In
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4 relative">

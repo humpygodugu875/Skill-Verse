@@ -9,6 +9,7 @@ import { ROUTES } from '../../constants/navigation';
 import Button from '../../components/ui/button';
 import Input from '../../components/ui/input';
 import Card from '../../components/ui/card';
+import { supabase } from '../../lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,17 +32,35 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Mock session update simulating database authentication
-      setTimeout(() => {
-        setSession(
-          { id: 'usr_arjun', email },
-          'mocked-jwt-token-string'
-        );
-        setIsLoading(false);
-        router.push(ROUTES.ONBOARDING);
-      }, 1000);
+      // 1. Submit login request to Supabase Authentication engine
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      if (!data.user || !data.session) {
+        throw new Error('Login succeeded, but no session parameters were returned.');
+      }
+
+      // 2. Set authenticated context inside Zustand local session store
+      setSession(
+        {
+          id: data.user.id,
+          email: data.user.email || email,
+          created_at: data.user.created_at,
+        },
+        data.session.access_token
+      );
+
+      // 3. Navigate successfully to dashboard onboarding workflow
+      router.push(ROUTES.ONBOARDING);
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Please check your credentials.');
+    } finally {
       setIsLoading(false);
     }
   };

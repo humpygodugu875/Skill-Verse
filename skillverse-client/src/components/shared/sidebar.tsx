@@ -20,6 +20,7 @@ import {
 import { SIDEBAR_NAV_ITEMS, FOOTER_NAV_ITEMS, ROUTES } from '../../constants/navigation';
 import { useAuthStore } from '../../store';
 import { cn } from '../../lib/utils';
+import { supabase } from '../../lib/supabase';
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   LayoutDashboard,
@@ -37,7 +38,12 @@ export default function Sidebar() {
   const router = useRouter();
   const { user, clearSession } = useAuthStore();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     clearSession();
     router.push(ROUTES.HOME);
   };

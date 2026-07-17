@@ -2,14 +2,15 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Play, Hourglass, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Play, Hourglass, CheckCircle2, AlertCircle } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
 import Button from '../../../components/ui/button';
 import Input from '../../../components/ui/input';
 import AgentCard from '../../../components/ui/agent-card';
 import { usePipelineStore, useWorkspaceStore } from '../../../store';
 import { ROUTES } from '../../../constants/navigation';
-import { MOCK_ROADMAP, MOCK_AGENTS, MOCK_TASKS } from '../../../constants/mockData';
+import { MOCK_AGENTS } from '../../../constants/mockData';
+import { api } from '../../../services/api';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -23,8 +24,11 @@ export default function OnboardingPage() {
   const [hours, setHours] = useState('15');
   const [weeks, setWeeks] = useState('6');
   const [experience, setExperience] = useState('beginner');
+  const [errorAlert, setErrorAlert] = useState<string | null>(null);
 
-  const startOrchestratorSimulation = () => {
+  const startOrchestratorSimulation = (payload: any) => {
+    setErrorAlert(null);
+    
     // Scaffold initial idle agent instances
     usePipelineStore.setState({
       activeAgentsList: MOCK_AGENTS.map(agent => ({ ...agent, status: 'idle' }))
@@ -34,16 +38,58 @@ export default function OnboardingPage() {
 
     const agents = MOCK_AGENTS;
     let currentAgentIndex = 0;
+    let apiResponseData: any = null;
+    let apiCompleted = false;
+    let apiError: string | null = null;
+
+    // Start API request in parallel
+    api.goals.submit(payload)
+      .then((res: any) => {
+        apiResponseData = res;  // apiClient interceptor already unwraps .data
+        apiCompleted = true;
+      })
+      .catch((err: any) => {
+        apiError = err.message || 'Failed to analyze and save goal setting. Please try again.';
+        apiCompleted = true;
+      });
 
     const runNextAgentStep = () => {
       if (currentAgentIndex >= agents.length) {
-        // Pipeline completed. Save roadmaps inside stores.
-        setTimeout(() => {
-          setActiveRoadmap(MOCK_ROADMAP);
-          setTasksList(MOCK_TASKS);
-          setGenerating(false);
-          router.push(ROUTES.ROADMAP);
-        }, 1200);
+        // Pipeline visualization completed. Check API status.
+        const checkCompletion = () => {
+          if (apiCompleted) {
+            if (apiError) {
+              setGenerating(false);
+              setErrorAlert(apiError);
+            } else {
+              // Successfully generated goal and roadmap! Set states.
+              // Fetch the active roadmap immediately to seed local store views
+              api.roadmaps.getActive()
+                .then((rmRes: any) => {
+                  if (rmRes) {  // apiClient interceptor already unwraps .data
+                    setActiveRoadmap(rmRes);
+                    
+                    // Map generated daily plan tasks to the list cache if found
+                    const sampleTasks: any[] = [];
+                    (rmRes.milestones || []).forEach((m: any) => {
+                      if (m.tasks) sampleTasks.push(...m.tasks);
+                    });
+                    setTasksList(sampleTasks);
+                  }
+                  setGenerating(false);
+                  router.push(ROUTES.DASHBOARD);
+                })
+                .catch(() => {
+                  setGenerating(false);
+                  router.push(ROUTES.DASHBOARD);
+                });
+            }
+          } else {
+            // API call is still compiling results, poll check in 300ms
+            setTimeout(checkCompletion, 300);
+          }
+        };
+        checkCompletion();
         return;
       }
 
@@ -59,17 +105,31 @@ export default function OnboardingPage() {
       }));
 
       currentAgentIndex++;
-      setTimeout(runNextAgentStep, 1500); // 1.5 seconds per Agent
+      setTimeout(runNextAgentStep, 1000); // 1.0 second per Agent representation
     };
 
-    setTimeout(runNextAgentStep, 500);
+    setTimeout(runNextAgentStep, 300);
   };
 
   const handleCreateRequest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!goal || goal.trim().length < 10) return;
     
-    startOrchestratorSimulation();
+    // Construct database schema-compliant parameters
+    const title = goal.length > 50 ? goal.substring(0, 50) + '...' : goal;
+    
+    const payload = {
+      title,
+      description: goal,
+      skill_level: experience,
+      target_skill_level: experience === 'beginner' ? 'intermediate' : experience === 'intermediate' ? 'advanced' : 'expert',
+      learning_style: 'practical', // Default study parameters
+      weekly_hours: parseInt(hours, 10),
+      target_date: new Date(Date.now() + parseInt(weeks, 10) * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      category: 'Software Development',
+    };
+
+    startOrchestratorSimulation(payload);
   };
 
   // 1. Generation Animation View
@@ -119,6 +179,13 @@ export default function OnboardingPage() {
           Provide parameters to configure your personalized, agent-generated workspace.
         </p>
       </div>
+
+      {errorAlert && (
+        <div className="mb-6 p-4 rounded-lg bg-status-danger/10 border border-status-danger/20 text-status-danger flex items-center gap-3 text-left text-sm">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <span>{errorAlert}</span>
+        </div>
+      )}
 
       <Card hoverable={false} className="border-card-border bg-[#070712]/50 p-8 text-left">
         <form onSubmit={handleCreateRequest} className="space-y-6">
