@@ -8,6 +8,7 @@ import { logger } from './utils/logger';
 import { AppError } from './utils/errors';
 import { sendSuccess } from './utils/responses';
 import { globalErrorHandler } from './middlewares/error.middleware';
+import authRouter from './routes/auth.routes';
 
 const app = express();
 
@@ -45,7 +46,10 @@ app.use(
   )
 );
 
-// 5. System Health Check Route
+// 5. API Routes
+app.use('/api/auth', authRouter);
+
+// 6. System Health Check Route
 app.get('/health', (_req, res) => {
   const healthInfo = {
     uptime: process.uptime(),
