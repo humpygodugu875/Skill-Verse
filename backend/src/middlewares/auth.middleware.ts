@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { supabase } from '../lib/supabase';
 import { AppError, ErrorCode } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -43,7 +44,17 @@ export const requireAuth = async (
 
     logger.debug(`[AuthMiddleware] Extracted access token: ${token.substring(0, 10)}... JWT signature validation pending.`);
 
-    // TODO: Verify JWT token & assign user payload to request context
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      throw new AppError(
+        error?.message || 'Invalid or expired authentication session.',
+        401,
+        ErrorCode.UNAUTHORIZED
+      );
+    }
+
+    logger.debug(`[AuthMiddleware] User token verified successfully for user: ${user.id}`);
     
     next();
   } catch (error) {
