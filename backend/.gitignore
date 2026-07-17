@@ -1,0 +1,14 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+
+# Local environment variables containing credentials
+.env
+
+# Diagnostic logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
