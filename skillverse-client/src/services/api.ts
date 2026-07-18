@@ -30,30 +30,40 @@ export const api = {
       apiClient.get(`/planner/today`, { params: { date } }),
     toggleTaskCompleted: (taskId: string, isCompleted: boolean): Promise<any> =>
       apiClient.patch(`/planner/tasks/${taskId}`, { is_completed: isCompleted }),
+    getDailyPlan: (date?: string): Promise<any> =>
+      apiClient.get('/daily-plan', { params: { date } }),
+  },
+
+  // Task Status Controllers
+  tasks: {
+    updateStatus: (taskId: string, status: 'completed' | 'pending'): Promise<any> =>
+      apiClient.patch(`/tasks/${taskId}`, { status }),
   },
 
   // Resource Library Controllers
   resources: {
+    getAll: (type?: string): Promise<any> =>
+      apiClient.get('/resources', type ? { params: { type } } : {}),
     getMilestoneResources: (milestoneId: string): Promise<any> =>
       apiClient.get(`/milestones/${milestoneId}/resources`),
     toggleBookmark: (resourceId: string, isBookmarked: boolean): Promise<any> =>
       apiClient.patch(`/resources/${resourceId}/bookmark`, { is_bookmarked: isBookmarked }),
   },
 
-  // Capstone Projects & Mentoring Controllers
+  // Capstone Projects & Mentor Chat Controllers
   projects: {
-    getMilestoneProject: (milestoneId: string): Promise<any> =>
-      apiClient.get(`/milestones/${milestoneId}/project`),
-    sendSocraticMessage: (projectId: string, message: string): Promise<any> =>
+    getAll: (): Promise<any> => apiClient.get('/projects'),
+    getById: (projectId: string): Promise<any> => apiClient.get(`/projects/${projectId}`),
+    getHistory: (projectId: string): Promise<any> => apiClient.get(`/projects/${projectId}/chat`),
+    sendMessage: (projectId: string, message: string): Promise<any> =>
       apiClient.post(`/projects/${projectId}/chat`, { message }),
   },
 
   // Quiz Evaluator Controllers
   quizzes: {
-    getMilestoneQuiz: (milestoneId: string): Promise<any> =>
-      apiClient.get(`/milestones/${milestoneId}/quiz`),
-    submitQuizAnswers: (quizId: string, answers: Array<{ question_id: number; selected_option: string }>): Promise<any> =>
-      apiClient.post(`/quizzes/${quizId}/submit`, { answers }),
+    getCurrent: (): Promise<any> => apiClient.get('/quiz/current'),
+    submit: (quizId: string, answers: Record<string, number>): Promise<any> =>
+      apiClient.post('/quiz/submit', { quizId, answers }),
   },
 
   // Progress Analytics Controllers

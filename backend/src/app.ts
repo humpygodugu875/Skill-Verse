@@ -12,6 +12,11 @@ import authRouter from './routes/auth.routes';
 import goalsRouter from './routes/goals.routes';
 import roadmapsRouter from './routes/roadmaps.routes';
 import progressRouter from './routes/progress.routes';
+import dailyPlanRouter from './routes/daily-plan.routes';
+import tasksRouter from './routes/tasks.routes';
+import resourcesRouter from './routes/resources.routes';
+import projectsRouter from './routes/projects.routes';
+import quizRouter from './routes/quiz.routes';
 
 const app = express();
 
@@ -54,6 +59,11 @@ app.use('/api/auth', authRouter);
 app.use('/api/goals', goalsRouter);
 app.use('/api/roadmaps', roadmapsRouter);
 app.use('/api/progress', progressRouter);
+app.use('/api/daily-plan', dailyPlanRouter);
+app.use('/api/tasks', tasksRouter);
+app.use('/api/resources', resourcesRouter);
+app.use('/api/projects', projectsRouter);
+app.use('/api/quiz', quizRouter);
 
 
 // 6. System Health Check Route

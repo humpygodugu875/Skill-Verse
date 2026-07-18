@@ -5,8 +5,31 @@ import { Award, CheckCircle2, Flame, Clock, CalendarDays } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
 import Badge from '../../../components/ui/badge';
 import { MOCK_PROGRESS } from '../../../constants/mockData';
+import { api } from '../../../services/api';
 
 export default function ProgressPage() {
+  const [progress, setProgress] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+
+  React.useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        setIsLoading(true);
+        const res = await api.progress.getStats();
+        if (res.data) {
+          setProgress(res.data);
+        }
+      } catch (err) {
+        console.error('[ProgressPage] Failed to fetch progress:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProgress();
+  }, []);
+
+  const activeProgress = progress || MOCK_PROGRESS;
+
   // Generate mock heatmap cells (53 weeks * 7 days) simulating commit histories
   const generateHeatmapDays = () => {
     const daysData = [];
@@ -63,10 +86,10 @@ export default function ProgressPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {[
-          { icon: Flame, text: 'Current Streak', value: `${MOCK_PROGRESS.current_streak} days`, color: 'text-status-warning' },
-          { icon: Award, text: 'Longest Streak', value: `${MOCK_PROGRESS.longest_streak} days`, color: 'text-brand-secondary' },
-          { icon: CheckCircle2, text: 'Tasks Completed', value: `${MOCK_PROGRESS.completed_tasks} tasks`, color: 'text-status-success' },
-          { icon: Clock, text: 'Total Hours Spent', value: '8.5 hours', color: 'text-status-info' }
+          { icon: Flame, text: 'Current Streak', value: `${activeProgress.current_streak || 0} days`, color: 'text-status-warning' },
+          { icon: Award, text: 'Longest Streak', value: `${activeProgress.longest_streak || 0} days`, color: 'text-brand-secondary' },
+          { icon: CheckCircle2, text: 'Tasks Completed', value: `${activeProgress.completed_tasks || 0} tasks`, color: 'text-status-success' },
+          { icon: Clock, text: 'Total Hours Spent', value: `${((activeProgress.completed_tasks || 0) * 0.5).toFixed(1)} hours`, color: 'text-status-info' }
         ].map((metric, idx) => {
           const Icon = metric.icon;
           return (
@@ -120,7 +143,7 @@ export default function ProgressPage() {
           <CardTitle>Historical Log Feed</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {MOCK_PROGRESS.activity_log.map((log, idx) => (
+          {(activeProgress.activity_log || []).map((log: any, idx: number) => (
             <div key={idx} className="flex items-center justify-between p-3.5 border border-white/3 bg-background/20 rounded-md">
               <div className="flex items-center gap-3">
                 <CalendarDays className="h-4.5 w-4.5 text-brand-secondary" />
@@ -132,6 +155,9 @@ export default function ProgressPage() {
               <Badge variant="success">Completed</Badge>
             </div>
           ))}
+          {(!activeProgress.activity_log || activeProgress.activity_log.length === 0) && (
+            <div className="text-xs text-text-muted text-center py-6 select-none animate-pulse">No study history recorded yet. Complete daily checklist tasks to log streaks!</div>
+          )}
         </CardContent>
       </Card>
     </div>
