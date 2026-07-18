@@ -99,8 +99,8 @@ export class AIService {
       const prompt = `You are the lead AI orchestrator engine for SkillVerse, an AI-powered personalized learning workspace system.
 A user has submitted a learning goal in natural language. Your job is to:
 1. Understand the INTENT from the natural language input — even if it is vague, informal, or conversational.
-2. Conduct a rigorous diagnostic analysis on the learning objective.
-3. Generate a personalized, structured learning roadmap.
+2. Conduct a rigorous, highly insightful diagnostic analysis on the learning objective.
+3. Generate a top-tier, structured, step-by-step learning roadmap tailored to their profile and style.
 
 --- User Goal (Natural Language) ---
 ${nlSummary}
@@ -110,19 +110,22 @@ ${nlSummary}
 - Weekly Committed Hours: ${params.weekly_hours} hours/week
 - Target Completion Date: "${params.target_date}"
 
---- Analysis Instructions ---
-1. Understand and interpret the user's natural language goal, even if vague.
-2. Estimate: difficulty score (1-10), duration, prerequisites, strengths, weaknesses, starting point, learning strategy, confidence score (0-100).
-3. Build a sequential weekly roadmap broken into milestones.
-4. For each milestone provide:
-   - sequence_number (1-indexed integer)
-   - title & description
-   - estimated_days (integer, e.g. 7)
-   - topics array (specific core knowledge areas)
-   - learning_objectives array (concrete hands-on outcomes)
-   - resources array (minimum 2 items); each resource MUST have resource_type which is EXACTLY one of: "article", "video", "course", "documentation", "tool"
-   - project (capstone): title, description, requirements array, tech_stack array, steps array (each with step_number and description), estimated_hours
-   - tasks array (day-by-day actions); each task MUST have task_type which is EXACTLY one of: "read", "watch", "practice", "build", "quiz"
+--- Analysis & Planning Instructions ---
+1. Conduct a deep analysis of the learning goal:
+   - difficulty_score: 1-10 integer representing the challenge level.
+   - estimated_duration: Realistic time required to reach the target skill level.
+   - prerequisites: Critical background knowledge or tools they must know first.
+   - strengths: Opportunities in their profile or learning style that will speed up learning.
+   - weaknesses: Pitfalls they should watch out for (e.g. scope creep, abstract concepts, timing constraints).
+   - starting_point: A specific, clear first action item to overcome the cold start.
+   - learning_strategy: Practical daily advice matching their chosen style (${params.learning_style}).
+   - confidence_score: 0-100 indicating likelihood of success based on hours committed.
+
+2. Design a logically progressive, high-quality roadmap structured by Milestones:
+   - Organize milestones chronologically (Milestone 1, 2, etc.) spanning foundations to advanced application.
+   - For resources: Provide ACTUAL, highly relevant online learning URLs (e.g. from developer.mozilla.org, react.dev, youtube.com, github.com, nodejs.org, dev.to, medium.com) representing the topics. Do NOT use fake placeholder URLs like "example.com". Specify high-quality, practical recommendations. Each must have estimated_minutes > 0.
+   - For capstones: Create an engaging, real-world project that solidifies the milestone's concepts. List precise requirements (minimum 3) and a step-by-step build checklist (each with step_number and clear description).
+   - For daily tasks: Generate day-by-day, highly actionable, clear tasks (minimum 7 tasks per milestone, spaced across days 1 to 7) detailing exactly what they should read, code, test, or review. Do NOT write generic list items like "Read Core Content". Instead, write descriptive tasks (e.g., "Install and configure TypeScript with strict flags and initialize tsconfig.json").
 
 --- Response Format ---
 Return ONLY a raw valid JSON object (no markdown fences, no prose before or after):
@@ -152,7 +155,7 @@ Return ONLY a raw valid JSON object (no markdown fences, no prose before or afte
         "resources": [
           {
             "title": "Resource Name",
-            "url": "https://example.com",
+            "url": "https://developer.mozilla.org/...",
             "resource_type": "documentation",
             "estimated_minutes": 30,
             "why_recommended": "reason"

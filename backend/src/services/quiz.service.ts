@@ -344,12 +344,15 @@ Previously Completed Topics: ${completedList}
 
 === QUESTION REQUIREMENTS ===
 - Test understanding of: ${topicList}
-- Questions must be specific to the user's learning goal, not generic
-- Vary difficulty: 2 easy, 3 medium, 2 hard
-- Each question must have exactly 4 answer options
-- One correct answer per question (0-based index)
-- Provide a clear, educational explanation for the correct answer
-- Avoid trick questions — test genuine understanding
+- Make questions highly specific to the learner's active context and goals.
+- Structure multiple questions as practical scenario-based problems or brief code snippets of 3-6 lines.
+- Calibrate difficulty levels strictly:
+  - Easy: Syntactic understanding, basic definitions, and core usage patterns.
+  - Medium: Multi-component integration, simple configurations, and intermediate troubleshooting.
+  - Hard: Edge cases, performance considerations, security anti-patterns, or complex error-handling scenarios.
+- Include exactly 4 distinct and plausible options. Avoid obvious joke options.
+- Map exactly one correct answer (0-based index parameter).
+- Write a detailed, educational explanation: Explain exactly why the correct option is right, and why the incorrect options represent common developer bugs, design pitfalls, or security risks.
 
 === RESPONSE FORMAT ===
 Return ONLY a raw valid JSON array, no markdown, no prose:
